@@ -1,7 +1,17 @@
 # HouseIT — Cloudflare Worker Setup
 
-This folder contains the CV generation Worker that proxies requests to NVIDIA NIM,
-keeping the NVIDIA_API_KEY server-side (never exposed to the browser).
+This folder contains the CV generation + PDF rendering Worker.
+
+- `POST /generate` — proxies to NVIDIA NIM, keeps `NVIDIA_API_KEY` server-side,
+  returns a fixed JSON schema (candidate/target/experience/education/skills) —
+  never free-text prose.
+- `POST /render-pdf` — takes that schema and renders a fixed-layout A4 PDF via
+  `pdf-lib`. Layout coordinates are fixed; text is wrapped/truncated to fit
+  fixed slots, so editing a field (phone number, a duty line, etc.) can never
+  shift or break the printed layout.
+
+Run `npm install` inside this folder before `wrangler deploy` so `pdf-lib` is
+bundled (Cloudflare's Git integration does this automatically on push).
 
 ## One manual step required (Cloudflare dashboard — cannot be done via GitHub API)
 

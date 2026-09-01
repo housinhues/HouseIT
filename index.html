@@ -383,11 +383,12 @@ footer {
 
     <div id="outputPanel" style="display:none; margin-top:32px">
       <div class="card">
-        <div class="card-title">📄 AI CV Output</div>
-        <div class="cv-output" id="cvOut"></div>
+        <div class="card-title">📄 Review & Edit Before Printing</div>
+        <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px">Edit any field below — the PDF layout will not break from these changes. Then download.</p>
+        <div id="cvEditFields"></div>
         <div style="display:flex; gap:12px; margin-top:20px; flex-wrap:wrap">
-          <button class="tag" onclick="copyCV()">📋 Copy text</button>
-          <button class="tag" onclick="markPrintReady()">🖨️ Mark as print ready</button>
+          <button class="tag" onclick="downloadPdf()">⬇️ Download PDF</button>
+          <button class="tag" onclick="copyCV()">📋 Copy as text</button>
           <button class="tag" onclick="resetForm()">➕ New customer</button>
         </div>
       </div>
@@ -425,7 +426,6 @@ footer {
   let addons = []; // { id, qty, price, label }
   let dailyRevenue = 0;
   let orderCount = 0;
-  let lastGeneratedCV = "";
   let uploadedFileText = "";
 
   // Load daily stats from localStorage
@@ -499,27 +499,31 @@ footer {
   // Dynamic form builders
   let expIndex = 0, eduIndex = 0;
   function addExp() { expIndex++; const div = document.createElement("div"); div.className = "rep-item"; div.style.marginBottom="12px"; div.style.background="var(--paper)"; div.style.padding="12px"; div.style.borderRadius="12px"; div.innerHTML = `<div class="row"><div class="fld"><input placeholder="Job title"></div><div class="fld"><input placeholder="Employer"></div></div><div class="row"><div class="fld"><input placeholder="Start date"></div><div class="fld"><input placeholder="End date"></div></div><div class="fld"><textarea placeholder="Key duties & achievements" rows="2"></textarea></div><button class="tag" onclick="this.parentElement.remove()">✖ Remove</button>`; document.getElementById("expList").appendChild(div); }
-  function addEdu() { eduIndex++; const div = document.createElement("div"); div.style.marginBottom="12px"; div.style.background="var(--paper)"; div.style.padding="12px"; div.style.borderRadius="12px"; div.innerHTML = `<div class="row"><div class="fld"><input placeholder="Qualification"></div><div class="fld"><input placeholder="Institution"></div></div><div class="row"><div class="fld"><input placeholder="Year"></div><div class="fld"><input placeholder="Subjects"></div></div><button class="tag" onclick="this.parentElement.remove()">✖ Remove</button>`; document.getElementById("eduList").appendChild(div); }
+  function addEdu() { eduIndex++; const div = document.createElement("div"); div.className = "rep-item"; div.style.marginBottom="12px"; div.style.background="var(--paper)"; div.style.padding="12px"; div.style.borderRadius="12px"; div.innerHTML = `<div class="row"><div class="fld"><input placeholder="Qualification"></div><div class="fld"><input placeholder="Institution"></div></div><div class="row"><div class="fld"><input placeholder="Year"></div><div class="fld"><input placeholder="Subjects"></div></div><button class="tag" onclick="this.parentElement.remove()">✖ Remove</button>`; document.getElementById("eduList").appendChild(div); }
   
   function handleUpload(fileInput) { if(fileInput.files[0]) uploadedFileText = `[User uploaded: ${fileInput.files[0].name}] – refine mode active.`; document.querySelector(".upload-zone").innerHTML = "✅ File loaded for refinement"; }
 
-  const HOUSEIT_WORKER_URL = "https://houseit.housinhues.workers.dev/generate";
+  const HOUSEIT_WORKER_BASE = "https://houseit.housinhues.workers.dev";
+  let currentSchema = null; // the single source of truth once generation succeeds
 
-  function buildFallbackCV(name) {
-    let generated = `=== PROFESSIONAL CV – ${name.toUpperCase()} ===\n\n`;
-    if (currentService === "full") {
-      generated += `🎯 TARGET: ${document.getElementById("jobTarget").value || "Professional role"}\n📞 ${document.getElementById("phone").value || "—"} | ✉️ ${document.getElementById("email").value || "—"} | 📍 ${document.getElementById("city").value || "ZA"}\n\n🔹 PROFESSIONAL SUMMARY\n${document.getElementById("summary").value || "Experienced and dedicated professional with strong track record."}\n\n🔹 WORK EXPERIENCE\n`;
-      const exps = document.querySelectorAll("#expList .rep-item");
-      if(exps.length===0) generated += "• Relevant experience details available on request.\n";
-      else exps.forEach(e => { const inputs = e.querySelectorAll("input,textarea"); generated += `• ${inputs[0]?.value || "Role"} at ${inputs[1]?.value || "Company"} (${inputs[2]?.value}–${inputs[3]?.value})\n  ${inputs[4]?.value || "Key contributions"}\n`; });
-      generated += "\n🔹 EDUCATION\n";
-      const edus = document.querySelectorAll("#eduList .rep-item");
-      edus.forEach(e => { const inp = e.querySelectorAll("input"); generated += `• ${inp[0]?.value || "Qualification"} – ${inp[1]?.value || "Institution"} (${inp[2]?.value})\n  ${inp[3]?.value || ""}\n`; });
-      generated += "\n🔹 SKILLS\n" + (document.getElementById("customSkills").value || "Communication, Problem-solving, Teamwork") + "\n";
-    } else {
-      generated += `🔁 REFINEMENT MODE (${SERVICES[currentService]?.name})\nOriginal content optimized.\n\nCANDIDATE: ${name}\nCONTACT: ${document.getElementById("phone").value}\n\nIMPROVED CV:\n• Professional formatting applied\n• Grammar enhanced\n• South African context integrated\n${uploadedFileText ? "Based on client upload." : "Newly structured profile."}\n\nExperience & qualifications aligned with market standards.`;
-    }
-    return generated;
+  function buildFallbackSchema(name) {
+    const exps = Array.from(document.querySelectorAll("#expList .rep-item")).map(e => {
+      const i = e.querySelectorAll("input,textarea");
+      return { title: i[0]?.value || "", employer: i[1]?.value || "", start: i[2]?.value || "", end: i[3]?.value || "", duties: i[4]?.value || "" };
+    });
+    const edus = Array.from(document.querySelectorAll("#eduList .rep-item")).map(e => {
+      const i = e.querySelectorAll("input");
+      return { qualification: i[0]?.value || "", institution: i[1]?.value || "", year: i[2]?.value || "", subjects: i[3]?.value || "" };
+    });
+    const skillTags = Array.from(document.querySelectorAll("#skillTags .tag.on")).map(t => t.innerText);
+    const customSkills = (document.getElementById("customSkills").value || "").split(",").map(s => s.trim()).filter(Boolean);
+    return {
+      candidate: { name, phone: document.getElementById("phone").value, email: document.getElementById("email").value, city: document.getElementById("city").value },
+      target: { role: document.getElementById("jobTarget")?.value || "", summary: document.getElementById("summary")?.value || "Experienced and dedicated professional with a strong track record." },
+      experience: exps,
+      education: edus,
+      skills: [...skillTags, ...customSkills],
+    };
   }
 
   function buildPrompt(name) {
@@ -545,9 +549,9 @@ footer {
     if (!name) { alert("Candidate name required"); return; }
     document.getElementById("loader").classList.add("show");
 
-    let generated;
+    let schema;
     try {
-      const res = await fetch(HOUSEIT_WORKER_URL, {
+      const res = await fetch(`${HOUSEIT_WORKER_BASE}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: buildPrompt(name) })
@@ -555,16 +559,16 @@ footer {
       if (!res.ok) throw new Error(`Worker returned ${res.status}`);
       const data = await res.json();
       if (!data.cv) throw new Error("Worker response missing 'cv'");
-      generated = data.cv;
+      schema = data.cv;
     } catch (err) {
       console.error("HouseIT AI generation failed, using local fallback:", err);
-      generated = buildFallbackCV(name);
+      schema = buildFallbackSchema(name);
     }
 
-    lastGeneratedCV = generated;
-    document.getElementById("cvOut").innerText = generated;
+    currentSchema = schema;
+    renderEditFields(schema);
     document.getElementById("outputPanel").style.display = "block";
-    
+
     // add order to daily stats
     const totalPrice = parseInt(document.getElementById("totalAmount").innerText.replace("TOTAL: R",""));
     dailyRevenue += totalPrice;
@@ -574,12 +578,117 @@ footer {
     addToOrderHistory(`${name} — ${SERVICES[currentService]?.name} — R${totalPrice}`);
     document.getElementById("loader").classList.remove("show");
   }
-  
+
+  // Renders editable fields bound to currentSchema. Edits here only ever change
+  // data — never layout — because the PDF template on the Worker side owns layout.
+  function renderEditFields(schema) {
+    const c = document.getElementById("cvEditFields");
+    c.innerHTML = "";
+
+    function field(label, value, onInput) {
+      const wrap = document.createElement("div");
+      wrap.className = "fld";
+      wrap.style.marginBottom = "10px";
+      wrap.innerHTML = `<label>${label}</label>`;
+      const input = document.createElement("input");
+      input.value = value || "";
+      input.oninput = () => onInput(input.value);
+      wrap.appendChild(input);
+      c.appendChild(wrap);
+    }
+
+    field("Name", schema.candidate.name, v => schema.candidate.name = v);
+    field("Phone", schema.candidate.phone, v => schema.candidate.phone = v);
+    field("Email", schema.candidate.email, v => schema.candidate.email = v);
+    field("City", schema.candidate.city, v => schema.candidate.city = v);
+    field("Target Role", schema.target.role, v => schema.target.role = v);
+
+    const sumWrap = document.createElement("div");
+    sumWrap.className = "fld";
+    sumWrap.style.marginBottom = "10px";
+    sumWrap.innerHTML = `<label>Summary</label>`;
+    const sumTa = document.createElement("textarea");
+    sumTa.rows = 3;
+    sumTa.value = schema.target.summary || "";
+    sumTa.oninput = () => schema.target.summary = sumTa.value;
+    sumWrap.appendChild(sumTa);
+    c.appendChild(sumWrap);
+
+    schema.experience.forEach((exp, i) => {
+      const block = document.createElement("div");
+      block.style.cssText = "background:var(--paper);padding:12px;border-radius:12px;margin-bottom:10px";
+      block.innerHTML = `<div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text-muted);margin-bottom:6px">EXPERIENCE ${i+1}</div>`;
+      c.appendChild(block);
+      ["title","employer","start","end","duties"].forEach(k => {
+        const wrap = document.createElement("div");
+        wrap.className = "fld";
+        wrap.style.marginBottom = "6px";
+        wrap.innerHTML = `<label>${k}</label>`;
+        const input = document.createElement("input");
+        input.value = exp[k] || "";
+        input.oninput = () => exp[k] = input.value;
+        wrap.appendChild(input);
+        block.appendChild(wrap);
+      });
+    });
+
+    schema.education.forEach((ed, i) => {
+      const block = document.createElement("div");
+      block.style.cssText = "background:var(--paper);padding:12px;border-radius:12px;margin-bottom:10px";
+      block.innerHTML = `<div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text-muted);margin-bottom:6px">EDUCATION ${i+1}</div>`;
+      c.appendChild(block);
+      ["qualification","institution","year","subjects"].forEach(k => {
+        const wrap = document.createElement("div");
+        wrap.className = "fld";
+        wrap.style.marginBottom = "6px";
+        wrap.innerHTML = `<label>${k}</label>`;
+        const input = document.createElement("input");
+        input.value = ed[k] || "";
+        input.oninput = () => ed[k] = input.value;
+        wrap.appendChild(input);
+        block.appendChild(wrap);
+      });
+    });
+
+    field("Skills (comma separated)", schema.skills.join(", "), v => schema.skills = v.split(",").map(s => s.trim()).filter(Boolean));
+  }
+
+  async function downloadPdf() {
+    if (!currentSchema) { alert("No CV generated yet."); return; }
+    document.getElementById("loader").classList.add("show");
+    try {
+      const res = await fetch(`${HOUSEIT_WORKER_BASE}/render-pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cv: currentSchema })
+      });
+      if (!res.ok) throw new Error(`Worker returned ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(currentSchema.candidate.name || "cv").replace(/\s+/g, "_")}_CV.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF download failed:", err);
+      alert("PDF generation failed — check your connection and try again.");
+    }
+    document.getElementById("loader").classList.remove("show");
+  }
+
   function addToOrderHistory(text) { let arr = JSON.parse(localStorage.getItem("orderHistory") || "[]"); arr.unshift({text, time: new Date().toLocaleTimeString()}); localStorage.setItem("orderHistory", JSON.stringify(arr.slice(0,15))); renderOrderHistory(); }
   function renderOrderHistory() { const container = document.getElementById("orderHistory"); if(!container) return; let arr = JSON.parse(localStorage.getItem("orderHistory") || "[]"); container.innerHTML = arr.map(o => `<div style="border-bottom:1px solid var(--border); padding:8px 0">🕒 ${o.time} — ${o.text}</div>`).join("") || "<div>No orders yet</div>"; }
   function clearPrintQueue() { localStorage.removeItem("orderHistory"); renderOrderHistory(); }
-  function markPrintReady() { if(lastGeneratedCV) alert("✅ CV marked as print-ready. Café attendant can now print."); else alert("No CV generated."); }
-  function copyCV() { if(lastGeneratedCV) { navigator.clipboard.writeText(lastGeneratedCV); alert("Copied to clipboard"); } }
+  function copyCV() {
+    if (!currentSchema) { alert("No CV generated yet."); return; }
+    const s = currentSchema;
+    const text = `${s.candidate.name}\n${s.candidate.phone} | ${s.candidate.email} | ${s.candidate.city}\n\nTARGET: ${s.target.role}\n${s.target.summary}\n\nEXPERIENCE\n${s.experience.map(e => `${e.title} — ${e.employer} (${e.start}–${e.end})\n${e.duties}`).join("\n")}\n\nEDUCATION\n${s.education.map(e => `${e.qualification} — ${e.institution} (${e.year})`).join("\n")}\n\nSKILLS\n${s.skills.join(", ")}`;
+    navigator.clipboard.writeText(text);
+    alert("Copied to clipboard");
+  }
   function resetForm() { window.location.reload(); }
   
   function switchPage(page, btn) {
