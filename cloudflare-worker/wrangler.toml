@@ -1,0 +1,6 @@
+name = "houseit-cv-gen"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+
+# Secrets (set via Cloudflare dashboard or `wrangler secret put`, never in this file):
+#   NVIDIA_API_KEY
