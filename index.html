@@ -503,11 +503,9 @@ footer {
   
   function handleUpload(fileInput) { if(fileInput.files[0]) uploadedFileText = `[User uploaded: ${fileInput.files[0].name}] – refine mode active.`; document.querySelector(".upload-zone").innerHTML = "✅ File loaded for refinement"; }
 
-  async function generateCV() {
-    const name = document.getElementById("fullName").value.trim();
-    if (!name) { alert("Candidate name required"); return; }
-    document.getElementById("loader").classList.add("show");
-    await new Promise(r => setTimeout(r, 800)); // simulate AI
+  const HOUSEIT_WORKER_URL = "https://houseit.housinhues.workers.dev/generate";
+
+  function buildFallbackCV(name) {
     let generated = `=== PROFESSIONAL CV – ${name.toUpperCase()} ===\n\n`;
     if (currentService === "full") {
       generated += `🎯 TARGET: ${document.getElementById("jobTarget").value || "Professional role"}\n📞 ${document.getElementById("phone").value || "—"} | ✉️ ${document.getElementById("email").value || "—"} | 📍 ${document.getElementById("city").value || "ZA"}\n\n🔹 PROFESSIONAL SUMMARY\n${document.getElementById("summary").value || "Experienced and dedicated professional with strong track record."}\n\n🔹 WORK EXPERIENCE\n`;
@@ -521,6 +519,48 @@ footer {
     } else {
       generated += `🔁 REFINEMENT MODE (${SERVICES[currentService]?.name})\nOriginal content optimized.\n\nCANDIDATE: ${name}\nCONTACT: ${document.getElementById("phone").value}\n\nIMPROVED CV:\n• Professional formatting applied\n• Grammar enhanced\n• South African context integrated\n${uploadedFileText ? "Based on client upload." : "Newly structured profile."}\n\nExperience & qualifications aligned with market standards.`;
     }
+    return generated;
+  }
+
+  function buildPrompt(name) {
+    if (currentService === "full") {
+      const exps = Array.from(document.querySelectorAll("#expList .rep-item")).map(e => {
+        const i = e.querySelectorAll("input,textarea");
+        return `Role: ${i[0]?.value || ""}, Employer: ${i[1]?.value || ""}, Dates: ${i[2]?.value || ""}–${i[3]?.value || ""}, Duties: ${i[4]?.value || ""}`;
+      }).join("\n");
+      const edus = Array.from(document.querySelectorAll("#eduList .rep-item")).map(e => {
+        const i = e.querySelectorAll("input");
+        return `Qualification: ${i[0]?.value || ""}, Institution: ${i[1]?.value || ""}, Year: ${i[2]?.value || ""}, Subjects: ${i[3]?.value || ""}`;
+      }).join("\n");
+      const skillTags = Array.from(document.querySelectorAll("#skillTags .tag.on")).map(t => t.innerText).join(", ");
+      return `Build a full professional CV from scratch.\nName: ${name}\nTarget role: ${document.getElementById("jobTarget").value}\nPhone: ${document.getElementById("phone").value}\nEmail: ${document.getElementById("email").value}\nLocation: ${document.getElementById("city").value}\nSummary: ${document.getElementById("summary").value}\nWork experience:\n${exps}\nEducation:\n${edus}\nSkills: ${skillTags}${document.getElementById("customSkills").value ? ", " + document.getElementById("customSkills").value : ""}`;
+    } else {
+      const editTags = Array.from(document.querySelectorAll("#editTags .tag.on")).map(t => t.innerText).join(", ");
+      return `Refine an existing CV (${SERVICES[currentService]?.name}).\nCandidate: ${name}\nContact: ${document.getElementById("phone").value}\nRequested edits: ${editTags}\nNotes: ${document.getElementById("editNotes").value}\n${uploadedFileText || "No file uploaded — improve based on notes only."}`;
+    }
+  }
+
+  async function generateCV() {
+    const name = document.getElementById("fullName").value.trim();
+    if (!name) { alert("Candidate name required"); return; }
+    document.getElementById("loader").classList.add("show");
+
+    let generated;
+    try {
+      const res = await fetch(HOUSEIT_WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: buildPrompt(name) })
+      });
+      if (!res.ok) throw new Error(`Worker returned ${res.status}`);
+      const data = await res.json();
+      if (!data.cv) throw new Error("Worker response missing 'cv'");
+      generated = data.cv;
+    } catch (err) {
+      console.error("HouseIT AI generation failed, using local fallback:", err);
+      generated = buildFallbackCV(name);
+    }
+
     lastGeneratedCV = generated;
     document.getElementById("cvOut").innerText = generated;
     document.getElementById("outputPanel").style.display = "block";
