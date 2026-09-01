@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>HouseIT — CV Intelligence for Internet Cafés</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0d0d0d;
+  --ink-2: #1c1c1c;
+  --ink-3: #2e2e2e;
+  --paper: #f5f3ee;
+  --paper-2: #ede9e1;
+  --paper-3: #e3ddd4;
+  --accent: #c8611a;
+  --accent-2: #e8782a;
+  --accent-light: #fef0e6;
+  --success: #2d6a4f;
+  --success-bg: #d8f3dc;
+  --border: #d4cdc3;
+  --border-dark: #b8b0a4;
+  --text-muted: #6b6560;
+  --text-faint: #9a9289;
+  --white: #ffffff;
+  --shadow: 0 2px 8px rgba(13,13,13,0.08);
+  --shadow-lg: 0 8px 32px rgba(13,13,13,0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* HEADER */
+.header {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 70px;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid var(--ink-3);
+}
+.brand-area { display: flex; align-items: baseline; gap: 24px; flex-wrap: wrap; }
+.wordmark {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.8rem;
+  letter-spacing: -0.04em;
+  color: var(--paper);
+}
+.wordmark em { font-style: normal; color: var(--accent-2); }
+.badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  background: rgba(255,255,255,0.08);
+  padding: 6px 12px;
+  border-radius: 40px;
+  color: var(--accent-2);
+  letter-spacing: 0.02em;
+}
+.cafe-stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--ink-2);
+  padding: 8px 20px;
+  border-radius: 48px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+}
+.cafe-stats span { color: var(--accent-2); font-weight: 600; }
+
+/* NAV */
+.nav {
+  background: var(--ink-2);
+  display: flex;
+  padding: 0 32px;
+  gap: 4px;
+  border-bottom: 1px solid var(--ink-3);
+}
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.55);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 12px 20px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: 0.2s;
+}
+.nav-btn:hover { color: white; }
+.nav-btn.active { color: var(--accent-2); border-bottom-color: var(--accent-2); }
+
+/* MAIN LAYOUT */
+.page { display: none; }
+.page.active { display: block; }
+.main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+/* CARDS */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  transition: box-shadow 0.2s;
+}
+.card-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--paper-2);
+  padding-bottom: 10px;
+}
+
+/* PRICING GRID */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.price-card {
+  background: var(--paper);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.price-card.selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  box-shadow: 0 4px 12px rgba(200,97,26,0.15);
+}
+.price-title { font-weight: 700; font-size: 0.9rem; }
+.price-amount { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--ink); margin: 6px 0; }
+.price-desc { font-size: 0.7rem; color: var(--text-muted); }
+
+/* ADD-ONS */
+.addons-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+.addon-chip {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 40px;
+  padding: 8px 18px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.addon-chip.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.qty-control { display: inline-flex; align-items: center; gap: 8px; margin-left: 8px; }
+.qty-btn { background: var(--border); border: none; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+/* ORDER SUMMARY */
+.order-summary {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 20px;
+  padding: 20px 24px;
+  margin: 24px 0 16px;
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.summary-total {
+  font-size: 1.3rem;
+  font-weight: 800;
+  font-family: 'Syne', sans-serif;
+  margin-top: 12px;
+}
+.confirm-btn {
+  background: var(--accent);
+  width: 100%;
+  padding: 14px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: 40px;
+  color: white;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: 0.2s;
+}
+.confirm-btn:hover { background: var(--accent-2); }
+
+/* FORM ROWS */
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.fld { display: flex; flex-direction: column; gap: 6px; }
+.fld label { font-family: 'DM Mono', monospace; font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); }
+.fld input, .fld textarea, .fld select {
+  border: 1.5px solid var(--border);
+  background: var(--paper);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+}
+.fld input:focus { border-color: var(--accent); outline: none; }
+.tag-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.tag {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  padding: 6px 16px;
+  border-radius: 40px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.tag.on { background: var(--ink); color: white; border-color: var(--ink); }
+
+.gen-btn {
+  background: var(--ink);
+  color: white;
+  width: 100%;
+  padding: 18px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.cv-output {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px;
+  white-space: pre-wrap;
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.6;
+  max-height: 600px;
+  overflow-y: auto;
+}
+.loader-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13,13,13,0.92);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  color: white;
+}
+.loader-overlay.show { display: flex; }
+.spinner { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--accent-2); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 24px;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  font-family: 'DM Mono', monospace;
+}
+@media (max-width: 700px) {
+  .row { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: stretch; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand-area">
+    <div class="wordmark">House<em>IT</em></div>
+    <div class="badge">⚡ Housing Hues Division • Café SaaS</div>
+  </div>
+  <div class="cafe-stats">
+    <span>☕ Partner Hub</span> | Today: <span id="dailyCount">0</span> CVs | Revenue: <span id="dailyRev">R0</span>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="switchPage('build',this)">⚡ CV Studio</button>
+  <button class="nav-btn" onclick="switchPage('orders',this)">📋 Orders & Print</button>
+</div>
+
+<!-- BUILD PAGE -->
+<div id="page-build" class="page active">
+  <div class="main">
+    <div class="card">
+      <div class="card-title">📦 Select Service Package</div>
+      <div class="pricing-grid" id="serviceGrid"></div>
+      
+      <div class="card-title" style="margin-top: 20px;">➕ Add‑ons (optional)</div>
+      <div class="addons-grid" id="addonsGrid"></div>
+    </div>
+
+    <div class="card" id="candidateDetails">
+      <div class="card-title">📄 Candidate Profile</div>
+      <div class="row">
+        <div class="fld"><label>Full name *</label><input id="fullName" placeholder="e.g. Thabo Nkosi"></div>
+        <div class="fld"><label>Phone / WhatsApp</label><input id="phone" placeholder="082 123 4567"></div>
+      </div>
+      <div class="row">
+        <div class="fld"><label>Email</label><input id="email" placeholder="candidate@example.com"></div>
+        <div class="fld"><label>Location (City/Province)</label><input id="city" placeholder="Pretoria, GP"></div>
+      </div>
+    </div>
+
+    <div id="scratchOnly">
+      <div class="card">
+        <div class="card-title">🎯 Target Role & Summary</div>
+        <div class="fld"><label>Desired position</label><input id="jobTarget" placeholder="e.g. Security Supervisor, Admin Manager"></div>
+        <div class="fld" style="margin-top:12px"><label>Professional summary (2-3 sentences)</label><textarea id="summary" rows="3" placeholder="Highlight key strengths and career goals..."></textarea></div>
+      </div>
+      <div class="card">
+        <div class="card-title">💼 Work Experience</div>
+        <div id="expList"></div>
+        <button class="tag" onclick="addExp()" style="margin-top:8px">+ Add role</button>
+      </div>
+      <div class="card">
+        <div class="card-title">🎓 Education</div>
+        <div id="eduList"></div>
+        <button class="tag" onclick="addEdu()">+ Add qualification</button>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ Skills</div>
+        <div class="tag-wrap" id="skillTags"></div>
+        <div class="fld"><label>Custom skills (comma)</label><input id="customSkills" placeholder="e.g. SAP, CCTV, First Aid"></div>
+      </div>
+    </div>
+
+    <div id="refineOnly" style="display:none">
+      <div class="card">
+        <div class="card-title">✍️ Edit Instructions</div>
+        <div class="tag-wrap" id="editTags"></div>
+        <div class="fld"><label>Specific notes for AI</label><textarea id="editNotes" rows="2" placeholder="Fix grammar, improve tone, add keywords..."></textarea></div>
+        <div class="upload-zone" style="margin-top:16px; border:2px dashed var(--border); border-radius:16px; padding:24px; text-align:center; cursor:pointer" onclick="document.getElementById('fileInput').click()">
+          📎 Upload existing CV (PDF/Image)
+        </div>
+        <input type="file" id="fileInput" accept=".pdf,.jpg,.png,.txt" style="display:none" onchange="handleUpload(this)">
+      </div>
+    </div>
+
+    <!-- ORDER SUMMARY -->
+    <div class="order-summary" id="orderSummary">
+      <div class="summary-row"><span>Base service</span><strong id="basePriceLabel">—</strong></div>
+      <div id="addonsSummaryList"></div>
+      <div class="summary-total" id="totalAmount">TOTAL: R0</div>
+      <button class="confirm-btn" id="generateBtn" onclick="generateCV()">🚀 GENERATE & ADD TO QUEUE</button>
+    </div>
+
+    <div id="outputPanel" style="display:none; margin-top:32px">
+      <div class="card">
+        <div class="card-title">📄 AI CV Output</div>
+        <div class="cv-output" id="cvOut"></div>
+        <div style="display:flex; gap:12px; margin-top:20px; flex-wrap:wrap">
+          <button class="tag" onclick="copyCV()">📋 Copy text</button>
+          <button class="tag" onclick="markPrintReady()">🖨️ Mark as print ready</button>
+          <button class="tag" onclick="resetForm()">➕ New customer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDERS PAGE (minimal dashboard for printing) -->
+<div id="page-orders" class="page">
+  <div class="main">
+    <div class="card">
+      <div class="card-title">🖨️ Print Queue & Daily Orders</div>
+      <div id="orderHistory" style="margin-bottom:20px"></div>
+      <button class="confirm-btn" onclick="clearPrintQueue()" style="background:#555">Clear completed</button>
+    </div>
+  </div>
+</div>
+
+<footer>© 2026 Housing Hues — HouseIT Division • Partner Café SaaS • AI-powered CV production</footer>
+<div class="loader-overlay" id="loader"><div class="spinner"></div><div>HouseIT AI engine • generating professional CV</div></div>
+
+<script>
+  // PRICING CONFIG
+  const SERVICES = {
+    full: { name: "Full Build", price: 40, desc: "PDF + 4 prints + scan" },
+    refine_premium: { name: "Refine (premium)", price: 30, desc: "Template + pro edits" },
+    refine_basic: { name: "Refine (basic)", price: 15, desc: "Grammar & fixes only" },
+    print_bw: { name: "Print B&W", price: 7, desc: "per page" },
+    print_color: { name: "Print Color", price: 15, desc: "per page" },
+    id_copy: { name: "ID Copy (front/back)", price: 4, desc: "color" },
+    id_copy_bw: { name: "ID Copy B&W", price: 3, desc: "front/back" }
+  };
+  
+  let currentService = "full";
+  let addons = []; // { id, qty, price, label }
+  let dailyRevenue = 0;
+  let orderCount = 0;
+  let lastGeneratedCV = "";
+  let uploadedFileText = "";
+
+  // Load daily stats from localStorage
+  function loadStats() {
+    let rev = localStorage.getItem("houseit_rev");
+    let cnt = localStorage.getItem("houseit_count");
+    dailyRevenue = rev ? parseInt(rev) : 0;
+    orderCount = cnt ? parseInt(cnt) : 0;
+    document.getElementById("dailyRev").innerText = "R"+dailyRevenue;
+    document.getElementById("dailyCount").innerText = orderCount;
+  }
+  function saveStats() { localStorage.setItem("houseit_rev", dailyRevenue); localStorage.setItem("houseit_count", orderCount); }
+  
+  // Render pricing cards
+  function renderServices() {
+    const grid = document.getElementById("serviceGrid");
+    grid.innerHTML = "";
+    for (let [id, svc] of Object.entries(SERVICES)) {
+      const btn = document.createElement("div");
+      btn.className = "price-card" + (currentService === id ? " selected" : "");
+      btn.innerHTML = `<div class="price-title">${svc.name}</div><div class="price-amount">R${svc.price}</div><div class="price-desc">${svc.desc}</div>`;
+      btn.onclick = () => { currentService = id; renderServices(); updateOrderSummary(); toggleRefineScratch(); };
+      grid.appendChild(btn);
+    }
+  }
+
+  function toggleRefineScratch() {
+    const scratchDiv = document.getElementById("scratchOnly");
+    const refineDiv = document.getElementById("refineOnly");
+    if (currentService === "full") { scratchDiv.style.display = "block"; refineDiv.style.display = "none"; }
+    else { scratchDiv.style.display = "none"; refineDiv.style.display = "block"; }
+  }
+
+  // Addons rendering
+  function renderAddons() {
+    const container = document.getElementById("addonsGrid");
+    container.innerHTML = "";
+    const addonList = [
+      { id: "print_bw", label: "🖨️ Extra B&W print", basePrice: 7 },
+      { id: "print_color", label: "🎨 Extra Color print", basePrice: 15 },
+      { id: "id_copy", label: "🆔 ID Copy (color) R4", basePrice: 4 },
+      { id: "id_copy_bw", label: "⚫ ID Copy B&W R3", basePrice: 3 }
+    ];
+    addonList.forEach(a => {
+      const existing = addons.find(x => x.id === a.id);
+      const qty = existing ? existing.qty : 0;
+      const chip = document.createElement("div");
+      chip.className = "addon-chip" + (qty > 0 ? " selected" : "");
+      chip.innerHTML = `${a.label} ${qty > 0 ? `x${qty}` : ""} <span style="font-weight:800">R${(a.basePrice * (qty||0))}</span>`;
+      chip.onclick = (e) => { e.stopPropagation(); incrementAddon(a.id, a.basePrice, a.label); };
+      container.appendChild(chip);
+    });
+  }
+  function incrementAddon(id, pricePer, label) {
+    const existing = addons.find(x => x.id === id);
+    if (existing) { existing.qty++; }
+    else { addons.push({ id, qty: 1, price: pricePer, label }); }
+    renderAddons();
+    updateOrderSummary();
+  }
+  function updateOrderSummary() {
+    const basePrice = SERVICES[currentService]?.price || 0;
+    let total = basePrice;
+    let addonsHtml = "";
+    addons.forEach(a => { total += a.price * a.qty; addonsHtml += `<div class="summary-row"><span>${a.label} x${a.qty}</span><span>R${a.price * a.qty}</span></div>`; });
+    document.getElementById("basePriceLabel").innerHTML = `R${basePrice}`;
+    document.getElementById("addonsSummaryList").innerHTML = addonsHtml;
+    document.getElementById("totalAmount").innerHTML = `TOTAL: R${total}`;
+  }
+
+  // Dynamic form builders
+  let expIndex = 0, eduIndex = 0;
+  function addExp() { expIndex++; const div = document.createElement("div"); div.className = "rep-item"; div.style.marginBottom="12px"; div.style.background="var(--paper)"; div.style.padding="12px"; div.style.borderRadius="12px"; div.innerHTML = `<div class="row"><div class="fld"><input placeholder="Job title"></div><div class="fld"><input placeholder="Employer"></div></div><div class="row"><div class="fld"><input placeholder="Start date"></div><div class="fld"><input placeholder="End date"></div></div><div class="fld"><textarea placeholder="Key duties & achievements" rows="2"></textarea></div><button class="tag" onclick="this.parentElement.remove()">✖ Remove</button>`; document.getElementById("expList").appendChild(div); }
+  function addEdu() { eduIndex++; const div = document.createElement("div"); div.style.marginBottom="12px"; div.style.background="var(--paper)"; div.style.padding="12px"; div.style.borderRadius="12px"; div.innerHTML = `<div class="row"><div class="fld"><input placeholder="Qualification"></div><div class="fld"><input placeholder="Institution"></div></div><div class="row"><div class="fld"><input placeholder="Year"></div><div class="fld"><input placeholder="Subjects"></div></div><button class="tag" onclick="this.parentElement.remove()">✖ Remove</button>`; document.getElementById("eduList").appendChild(div); }
+  
+  function handleUpload(fileInput) { if(fileInput.files[0]) uploadedFileText = `[User uploaded: ${fileInput.files[0].name}] – refine mode active.`; document.querySelector(".upload-zone").innerHTML = "✅ File loaded for refinement"; }
+
+  async function generateCV() {
+    const name = document.getElementById("fullName").value.trim();
+    if (!name) { alert("Candidate name required"); return; }
+    document.getElementById("loader").classList.add("show");
+    await new Promise(r => setTimeout(r, 800)); // simulate AI
+    let generated = `=== PROFESSIONAL CV – ${name.toUpperCase()} ===\n\n`;
+    if (currentService === "full") {
+      generated += `🎯 TARGET: ${document.getElementById("jobTarget").value || "Professional role"}\n📞 ${document.getElementById("phone").value || "—"} | ✉️ ${document.getElementById("email").value || "—"} | 📍 ${document.getElementById("city").value || "ZA"}\n\n🔹 PROFESSIONAL SUMMARY\n${document.getElementById("summary").value || "Experienced and dedicated professional with strong track record."}\n\n🔹 WORK EXPERIENCE\n`;
+      const exps = document.querySelectorAll("#expList .rep-item");
+      if(exps.length===0) generated += "• Relevant experience details available on request.\n";
+      else exps.forEach(e => { const inputs = e.querySelectorAll("input,textarea"); generated += `• ${inputs[0]?.value || "Role"} at ${inputs[1]?.value || "Company"} (${inputs[2]?.value}–${inputs[3]?.value})\n  ${inputs[4]?.value || "Key contributions"}\n`; });
+      generated += "\n🔹 EDUCATION\n";
+      const edus = document.querySelectorAll("#eduList .rep-item");
+      edus.forEach(e => { const inp = e.querySelectorAll("input"); generated += `• ${inp[0]?.value || "Qualification"} – ${inp[1]?.value || "Institution"} (${inp[2]?.value})\n  ${inp[3]?.value || ""}\n`; });
+      generated += "\n🔹 SKILLS\n" + (document.getElementById("customSkills").value || "Communication, Problem-solving, Teamwork") + "\n";
+    } else {
+      generated += `🔁 REFINEMENT MODE (${SERVICES[currentService]?.name})\nOriginal content optimized.\n\nCANDIDATE: ${name}\nCONTACT: ${document.getElementById("phone").value}\n\nIMPROVED CV:\n• Professional formatting applied\n• Grammar enhanced\n• South African context integrated\n${uploadedFileText ? "Based on client upload." : "Newly structured profile."}\n\nExperience & qualifications aligned with market standards.`;
+    }
+    lastGeneratedCV = generated;
+    document.getElementById("cvOut").innerText = generated;
+    document.getElementById("outputPanel").style.display = "block";
+    
+    // add order to daily stats
+    const totalPrice = parseInt(document.getElementById("totalAmount").innerText.replace("TOTAL: R",""));
+    dailyRevenue += totalPrice;
+    orderCount++;
+    saveStats();
+    loadStats();
+    addToOrderHistory(`${name} — ${SERVICES[currentService]?.name} — R${totalPrice}`);
+    document.getElementById("loader").classList.remove("show");
+  }
+  
+  function addToOrderHistory(text) { let arr = JSON.parse(localStorage.getItem("orderHistory") || "[]"); arr.unshift({text, time: new Date().toLocaleTimeString()}); localStorage.setItem("orderHistory", JSON.stringify(arr.slice(0,15))); renderOrderHistory(); }
+  function renderOrderHistory() { const container = document.getElementById("orderHistory"); if(!container) return; let arr = JSON.parse(localStorage.getItem("orderHistory") || "[]"); container.innerHTML = arr.map(o => `<div style="border-bottom:1px solid var(--border); padding:8px 0">🕒 ${o.time} — ${o.text}</div>`).join("") || "<div>No orders yet</div>"; }
+  function clearPrintQueue() { localStorage.removeItem("orderHistory"); renderOrderHistory(); }
+  function markPrintReady() { if(lastGeneratedCV) alert("✅ CV marked as print-ready. Café attendant can now print."); else alert("No CV generated."); }
+  function copyCV() { if(lastGeneratedCV) { navigator.clipboard.writeText(lastGeneratedCV); alert("Copied to clipboard"); } }
+  function resetForm() { window.location.reload(); }
+  
+  function switchPage(page, btn) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById(`page-${page}`).classList.add("active");
+    if(btn) btn.classList.add("active");
+    if(page === "orders") renderOrderHistory();
+  }
+  
+  // SKILLS TAGS
+  const skillPresets = ["Strategic Planning","Client Relations","Financial Admin","Logistics","Leadership","MS Office","Customer Service","Security Compliance"];
+  skillPresets.forEach(s => { let t = document.createElement("span"); t.className="tag"; t.innerText=s; t.onclick=function(){this.classList.toggle("on")}; document.getElementById("skillTags")?.appendChild(t); });
+  const editPresets = ["Fix grammar","Improve structure","Add keywords","Professional tone","SA context"];
+  editPresets.forEach(s => { let t = document.createElement("span"); t.className="tag"; t.innerText=s; t.onclick=function(){this.classList.toggle("on")}; document.getElementById("editTags")?.appendChild(t); });
+  
+  renderServices(); renderAddons(); toggleRefineScratch(); updateOrderSummary(); loadStats(); renderOrderHistory();
+</script>
+</body>
+</html>
