@@ -13,6 +13,9 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 const ALLOWED_ORIGINS = [
   "https://houseit-huespane-stasie.vercel.app",
   "https://houseit-git-main-huespane-stasie.vercel.app",
+    "https://houseit-huespane.vercel.app",
+  "https://houseit-xi.vercel.app",
+  "https://houseit-git-main-huespane.vercel.app",
   "http://localhost:3000"
 ];
 
