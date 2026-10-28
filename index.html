@@ -503,7 +503,7 @@ footer {
   
   function handleUpload(fileInput) { if(fileInput.files[0]) uploadedFileText = `[User uploaded: ${fileInput.files[0].name}] – refine mode active.`; document.querySelector(".upload-zone").innerHTML = "✅ File loaded for refinement"; }
 
-  const HOUSEIT_WORKER_BASE = "https://houseit.housinhues.workers.dev";
+  const HOUSEIT_WORKER_BASE = "https://houseit.housinghues.workers.dev";
   let currentSchema = null; // the single source of truth once generation succeeds
 
   function buildFallbackSchema(name) {
